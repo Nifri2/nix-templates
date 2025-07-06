@@ -26,7 +26,8 @@
           shellHook = ''
             fish --init-command 'source .dev-fish-setup.fish'
             exit 0
-          '';
+          ''; # Optional: Fish shell setup script, just delete if not needed
+
 
           buildInputs = [ pythonEnv ];
         };

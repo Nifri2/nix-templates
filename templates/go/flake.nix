@@ -59,7 +59,7 @@
         if [ "$SHELL" = "$(which fish)" ]; then
           source .dev-fish-setup.fish
         fi
-      ''; # Optional: Fish shell setup script
+      ''; # Optional: Fish shell setup script, just delete if not needed
     };
   };
 }
