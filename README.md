@@ -6,18 +6,20 @@ This repo contains my templates for various languages or technologies
 
 ### Go
 
+#### Useage
 ```sh
-nix flake init -t github:Nifri2/nix-templates#go
+nix flake init --refresh -t github:Nifri2/nix-templates#go
 ```
+Make sure to read comments in flake.nix
 
 ### Python
 
 ```sh
-nix flake init -t github:Nifri2/nix-templates#python
+nix flake init --refresh -t github:Nifri2/nix-templates#python
 ```
 
 ### Micropython
 
 ```sh
-nix flake init -t github:Nifri2/nix-templates#micropython
+nix flake init --refresh -t github:Nifri2/nix-templates#micropython
 ```
