@@ -11,6 +11,10 @@
         path = ./templates/python;
         description = "Basic python setup with Nix";
       };
+      micropython = {
+        path = ./templates/micropython;
+        description = "MicroPython project setup with Nix";
+      };
     };
   };
 }
