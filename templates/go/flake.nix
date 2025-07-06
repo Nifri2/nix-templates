@@ -15,51 +15,57 @@
   inputs.nixpkgs.url = "github:NixOS/nixpkgs?ref=nixos-unstable";
 
   outputs = { self, nixpkgs }:
-  let
-    system = "x86_64-linux";
-    pkgs = nixpkgs.legacyPackages.${system};
+    let
+      system = "x86_64-linux";
+      pkgs = nixpkgs.legacyPackages.${system};
+    in
+    {
+      # Merge all packages under one attribute set to expose gopls
+      packages.${system} = {
+        default = pkgs.buildGoModule {
+          pname = "put-name-here";  # Set the name of your package
+          version = "0.0.1";
 
-  in {
-    packages.${system}.default = pkgs.buildGoModule {
-      pname = "put-name-here";  # Set the name of your package
-      version = "0.0.1";
+          src = pkgs.lib.cleanSource ./.;
 
-      src = pkgs.lib.cleanSource ./.;
+          env.CGO_ENABLED = 1;  # Disable CGO for Static Compilation
 
-      env.CGO_ENABLED = 1;  # Disable CGO for Static Compilation
+          ldflags = [
+            "-s" "-w" "-extldflags '-static'"
+          ];  # Strip Binary and Disable Debug Information, static linking
 
-      ldflags = [
-        "-s" "-w" "-extldflags '-static'"
-      ];  # Strip Binary and Disable Debug Information, static linking
+          vendorHash = null;  # Null if you don't have a vendor directory
 
-      vendorHash = null;  # Falls vendor/ nicht benutzt wird
+          buildInputs = [
+            pkgs.musl
+            pkgs.go
+            pkgs.gopls
+            pkgs.gotools
+            pkgs.go-tools
+            pkgs.golangci-lint
+          ];
+        };
 
-      buildInputs = [
-        pkgs.musl
-        pkgs.go
-        pkgs.gopls 
-        pkgs.gotools 
-        pkgs.go-tools
-        pkgs.golangci-lint
-      ];
+        # Expose gopls directly for scripts to use
+        gopls = pkgs.gopls;
+      };
+
+      devShells.${system}.default = pkgs.mkShell {
+        nativeBuildInputs = [
+          pkgs.go
+          pkgs.go-task
+          pkgs.gopls
+          pkgs.golangci-lint
+          pkgs.gotools
+          pkgs.go-tools
+          pkgs.musl
+        ];
+
+        shellHook = ''
+          if [ "$SHELL" = "$(which fish)" ]; then
+            source .dev-fish-setup.fish
+          fi
+        ''; # Optional: Fish shell setup script
+      };
     };
-
-    devShells.${system}.default = pkgs.mkShell {
-      nativeBuildInputs = [
-        pkgs.go
-        pkgs.go-task
-        pkgs.gopls
-        pkgs.golangci-lint
-        pkgs.gotools 
-        pkgs.go-tools
-        pkgs.musl
-      ];
-
-      shellHook = '' 
-        if [ "$SHELL" = "$(which fish)" ]; then
-          source .dev-fish-setup.fish
-        fi
-      ''; # Optional: Fish shell setup script, just delete if not needed
-    };
-  };
 }
