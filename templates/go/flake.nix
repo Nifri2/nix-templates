@@ -1,3 +1,14 @@
+
+# This flake works buy simply using go get <package> to fetch dependencies.
+# It uses vendor/ for dependencies, so you can run `go mod vendor` to populate it.
+# Or run `task mod` to automatically fetch dependencies and populate the vendor directory.
+
+# To build the Go project, run:
+#   task build
+
+# To run the Go project, run:
+#   nix run
+
 {
   description = "Basic Go Project with Nix Flake";
 
@@ -26,22 +37,29 @@
       buildInputs = [
         pkgs.musl
         pkgs.go
+        pkgs.gopls 
+        pkgs.gotools 
+        pkgs.go-tools
+        pkgs.golangci-lint
       ];
     };
 
     devShells.${system}.default = pkgs.mkShell {
       nativeBuildInputs = [
         pkgs.go
-        pkgs.musl
         pkgs.go-task
         pkgs.gopls
         pkgs.golangci-lint
+        pkgs.gotools 
+        pkgs.go-tools
+        pkgs.musl
       ];
-      shellHook = ''
+
+      shellHook = '' 
         if [ "$SHELL" = "$(which fish)" ]; then
           source .dev-fish-setup.fish
         fi
-      '';
+      ''; # Optional: Fish shell setup script
     };
   };
-}⏎
+}
