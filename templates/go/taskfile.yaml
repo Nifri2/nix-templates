@@ -1,0 +1,72 @@
+version: '3'
+
+tasks:
+  build:
+    silent: true
+    desc: "Build the project"
+    cmds:
+      - echo "Building..."
+      - go mod tidy
+      - go mod vendor
+      - |
+        if go mod verify; then
+          echo "✅ Go module verification successful!"
+        else
+          echo "❌ Go module verification failed!" >&2
+          exit 1
+        fi
+      - |
+        git stage .
+        commit_msg=$(git status --porcelain | awk '{print $2}' | tr '\n' ' ')
+        if [ -n "$commit_msg" ]; then
+          git commit -m "🔧 Update Go modules & build: $commit_msg"
+          echo "✅ Committed Go module changes!"
+          echo "✅ Continue building..."
+        else
+          echo "⚠️ No Go module changes to commit."
+        fi
+      - nix build
+      - echo "✅ Build successful!"
+      - echo "🚀 Pushing!"
+      - git push
+      - echo "✅ Pushed successfully!"
+      - echo "Binary:"
+      - "du -ah ./result/ | head -n 1"
+
+  auto-commit:
+    desc: "Automatically commit all changes with file names"
+    cmds:
+      - |
+        git add .
+        commit_msg=$(git status --porcelain | awk '{print $2}' | tr '\n' ' ')
+        if [ -n "$commit_msg" ]; then
+          git commit -m "📌 Updated files: $commit_msg"
+          echo "✅ Committed changes: $commit_msg"
+        else
+          echo "⚠️ No changes to commit."
+        fi
+    silent: false
+
+  mod:
+    desc: "Update Go modules"
+    silent: true
+    cmds:
+      - go mod tidy
+      - go mod vendor
+      - |
+        if go mod verify; then
+          echo "✅ Go module verification successful!"
+        else
+          echo "❌ Go module verification failed!" >&2
+          exit 1
+        fi
+      - echo "✅ Fetched latest changes!"
+      - echo "✅ All modules are up to date!"
+
+  run:
+    desc: "Run the project"
+    deps:
+      - build
+    silent: true
+    cmds:
+      - nix run
