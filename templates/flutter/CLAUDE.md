@@ -27,12 +27,23 @@ Source of truth is markdown in the repo. It is versioned and merges with the cod
 | docs/decisions/NNN-title.md | decision, reason, rejected options | append only |
 | tasks/<id>.md | goal, acceptance checks, owned paths | one per task |
 | handoffs/<id>.md | result, changed interfaces, open points | written at task end |
+| .claude/skills/<name>/SKILL.md | one repeatable multi-step procedure | only after user approval |
 | <subdir>/CLAUDE.md | rules valid only in that subtree | optional |
 
 - Doc style: terse key facts, lists, tables. No prose, no filler. Readability for humans is secondary.
 - Code change that affects a doc: update the doc in the same commit.
 - No vector DB by default. If added: MCP server, derived index only, rebuildable with `task index`,
   each entry stores commit hash + path. Commits never reference index IDs.
+
+## Skills
+- Skills live in .claude/skills/<name>/SKILL.md and are versioned with the repo.
+  Frontmatter: `name`, `description`. The description says when to use the skill, because that
+  line decides whether it gets loaded. Body under 40 lines.
+- The same multi-step procedure comes up a third time: propose a skill (name, one-line description,
+  the steps), wait for user approval, then create the file. Never create or change one unasked.
+- Before proposing, check .claude/skills/ for a skill that already covers it: propose an update instead.
+- A skill describes a procedure, not facts. Facts belong in docs/.
+- Skills call tasks from the Taskfile. They never duplicate the underlying tool commands.
 
 ## Tooling
 - Taskfile is the only command interface. Discover with `task --list`. Do not call underlying tools directly

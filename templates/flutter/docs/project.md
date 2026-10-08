@@ -4,6 +4,7 @@
 - Purpose: TODO one line
 - Stack: Dart + Flutter (Android), nix dev shell with the Android SDK from nixpkgs
 - Entry point: lib/main.dart (main)
+- Version: pubspec.yaml (`version: <semver>+<build>`, created by `task init`). Bump both parts for a release.
 - Constraints: Android only. SDK versions are pinned in flake.nix.
 
 ## Layout

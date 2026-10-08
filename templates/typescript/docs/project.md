@@ -4,6 +4,7 @@
 - Purpose: TODO one line
 - Stack: TypeScript on bun (prototype tier), biome + tsc, bun test, nix dev shell
 - Entry point: src/main.ts -> src/cli.ts (main)
+- Version: package.json (`version`). src/cli.ts imports it from there.
 - Constraints: prototype. Move to Go or Rust before this becomes a product.
 
 ## Layout

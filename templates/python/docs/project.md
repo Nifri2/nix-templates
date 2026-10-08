@@ -4,6 +4,7 @@
 - Purpose: TODO one line
 - Stack: Python (prototype tier), argparse CLI, uv + ruff + pyright + pytest, nix dev shell
 - Entry point: `projectname` console script -> src/projectname_pkg/cli.py (main)
+- Version: pyproject.toml (`[project] version`). The CLI reads it via importlib.metadata.
 - Constraints: prototype. Move to Go or Rust before this becomes a product.
 
 ## Layout

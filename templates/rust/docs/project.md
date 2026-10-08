@@ -4,6 +4,7 @@
 - Purpose: TODO one line
 - Stack: Rust (edition 2024), clap CLI, nix flake (dev shell + package)
 - Entry point: src/main.rs -> src/cli.rs (cli::run)
+- Version: Cargo.toml (`[package] version`). flake.nix and `env!("CARGO_PKG_VERSION")` read it from there.
 - Constraints: none yet
 
 ## Layout

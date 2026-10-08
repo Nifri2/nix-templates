@@ -2,7 +2,7 @@
 
 Project templates for working with Claude Code on NixOS. Every template ships the same
 project standard (`CLAUDE.md`), a flake with a dev shell, a Taskfile, git hooks, a changelog
-config, agent definitions and a walking skeleton with one passing e2e test.
+config, agent and skill definitions and a walking skeleton with one passing e2e test.
 
 ## Quick start
 
@@ -40,6 +40,7 @@ Flutter names must use `_` instead of `-`.
 | `docs/architecture.md`, `docs/decisions/`, `docs/modules/` | Versioned project knowledge |
 | `tasks/`, `handoffs/` | Task and handoff files for multi-agent work |
 | `.claude/agents/` | architect, test-writer, worker, reviewer, scout, each with a fixed model |
+| `.claude/skills/` | new-command, add-dependency, release: procedures Claude follows step by step |
 | `.claude/settings.json` | Permissions: `task` allowed, secrets unreadable, push asks, force push denied |
 | `flake.nix`, `.envrc` | Dev shell with every tool. Nothing is installed globally |
 | `Taskfile.yml` | The only command interface: setup, dev, fmt, lint, test, e2e, check, build, ci, changelog |
@@ -107,6 +108,10 @@ binary cache:
   `task init` (which runs `flutter create`), the Taskfile, the emulator task and
   `integration_test/app_test.dart` are unverified.
 - `.github/workflows/ci.yml` has never run.
+
+The three skills in `.claude/skills/` were written against the current skill format and the
+task names of every template, but never exercised in a real project: no command was added,
+no dependency installed and no release cut with them.
 
 No `flake.lock` is shipped. The first `nix develop` in a new project creates it: commit it.
 To start from the commit the flakes were evaluated against:

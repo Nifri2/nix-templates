@@ -4,6 +4,7 @@
 - Purpose: TODO one line
 - Stack: Go, cobra CLI, nix flake (dev shell + package)
 - Entry point: main.go -> internal/cli (cli.Main)
+- Version: flake.nix (`version = "0.1.0";`). ldflags inject it into main.version; `nix build` is the only build that sets it.
 - Constraints: none yet
 
 ## Layout
