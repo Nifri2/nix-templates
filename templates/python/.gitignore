@@ -1,0 +1,31 @@
+# nix, direnv
+/result
+/result-*
+.direnv/
+
+# claude code
+.claude/worktrees/
+.claude/settings.local.json
+CLAUDE.local.md
+
+# secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets/
+
+# build output and caches
+/bin/
+/dist/
+/build/
+/target/
+node_modules/
+.venv/
+__pycache__/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.dart_tool/
+.flutter-plugins-dependencies

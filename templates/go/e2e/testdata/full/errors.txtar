@@ -1,0 +1,13 @@
+# an unknown command fails with exit code 1 and a message on stderr
+! exec projectname no-such-command
+stderr '^error: unknown command'
+! stdout .
+
+# with --json the error is a JSON document on stderr
+! exec projectname no-such-command --json
+stderr '^\{"error":"unknown command'
+! stdout .
+
+# unexpected arguments are rejected
+! exec projectname version extra
+stderr '^error: '

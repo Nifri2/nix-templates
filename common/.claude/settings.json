@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(task *)",
+      "Bash(nix develop -c task *)",
+      "Bash(nix flake check *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(nix develop -c git commit *)",
+      "Bash(git switch *)"
+    ],
+    "ask": [
+      "Bash(git push *)"
+    ],
+    "deny": [
+      "Read(.env)",
+      "Read(.env.*)",
+      "Read(!.env.example)",
+      "Read(*.pem)",
+      "Read(*.key)",
+      "Read(secrets/**)",
+      "Bash(git push *--force*)",
+      "Bash(git push -f*)",
+      "Bash(git push * -f*)",
+      "Bash(*git commit *--no-verify*)",
+      "Bash(*git commit -n *)",
+      "Bash(*git commit * -n *)",
+      "Bash(*git commit * -n)"
+    ]
+  },
+  "worktree": {
+    "baseRef": "head"
+  }
+}

@@ -1,0 +1,29 @@
+# Go specific init steps. Sourced by scripts/init.
+# Optional: MODULE=<go module path>, e.g. github.com/you/tool. Defaults to the project name.
+
+REQUIRED_TOOLS=(go nix)
+
+validate() {
+  local module=${MODULE:-$name}
+  [[ $module =~ ^[A-Za-z0-9._~/-]+$ ]] || die "invalid MODULE '$module'"
+  [[ $module != *"$placeholder"* ]] || die "MODULE must not contain '$placeholder'"
+  # The binary is named after the last element of the module path.
+  [ "${module##*/}" = "$name" ] ||
+    die "the last element of MODULE ('${module##*/}') must equal NAME ('$name')"
+}
+
+pre_rename() {
+  local module=${MODULE:-$name}
+  sed -i "s|^module $placeholder\$|module $module|" go.mod
+  {
+    grep -rlZ --include='*.go' "\"$placeholder/" . || [ $? -eq 1 ]
+  } | xargs -0 -r sed -i "s|\"$placeholder/|\"$module/|g"
+  sed -i "s|- $placeholder\$|- $module|" .golangci.yml
+}
+
+post_rename() {
+  go mod tidy
+  task hash
+  # The new name changes line lengths and import grouping, so format once.
+  task fmt
+}

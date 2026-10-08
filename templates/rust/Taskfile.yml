@@ -1,0 +1,72 @@
+# The only command interface of this repo. List tasks with `task --list`.
+# Tasks print nothing on success and the full output on failure.
+# To see everything: task --output interleaved <name>
+version: '3'
+
+silent: true
+output:
+  group:
+    error_only: true
+
+includes:
+  init:
+    taskfile: Taskfile.init.yml
+    optional: true
+    flatten: true
+
+tasks:
+  setup:
+    desc: Install git hooks and download dependencies
+    cmds:
+      - lefthook install
+      - cargo fetch --locked
+
+  dev:
+    desc: Run the program, e.g. `task dev -- version --json`
+    interactive: true
+    cmds:
+      - cargo run --quiet --locked -- {{.CLI_ARGS}}
+
+  fmt:
+    desc: Format the code
+    cmds:
+      - cargo fmt
+
+  lint:
+    desc: Check formatting and run clippy (also type checks)
+    cmds:
+      - cargo fmt --check
+      - cargo clippy --all-targets --locked -- -D warnings
+
+  test:
+    desc: Unit tests and e2e smoke tests (fast, runs on every commit)
+    cmds:
+      - cargo nextest run --locked
+
+  e2e:
+    desc: Full e2e suite, including the tests marked #[ignore = "full"]
+    cmds:
+      - cargo nextest run --locked --run-ignored all
+
+  check:
+    desc: lint + test. Must pass before every commit
+    cmds:
+      - task: lint
+      - task: test
+
+  build:
+    desc: Build the program with nix (result/bin)
+    cmds:
+      - nix build
+
+  ci:
+    desc: Everything CI runs (check + e2e + build)
+    cmds:
+      - task: check
+      - task: e2e
+      - task: build
+
+  changelog:
+    desc: Regenerate CHANGELOG.md from the commit history
+    cmds:
+      - git-cliff --output CHANGELOG.md

@@ -1,0 +1,20 @@
+# Rust specific init steps. Sourced by scripts/init.
+# Cargo.lock contains the package name, so it is renamed together with everything else.
+
+REQUIRED_TOOLS=(cargo)
+
+validate() {
+  case "$name" in
+    build | deps | examples | incremental | test | core | std | alloc | proc-macro)
+      die "'$name' is reserved by cargo, choose another name"
+      ;;
+  esac
+}
+
+post_rename() {
+  # Rewrites Cargo.lock in sorted order after the rename, then downloads the crates.
+  cargo metadata --format-version 1 >/dev/null
+  cargo fetch --locked
+  # The new name changes line lengths, so format once.
+  task fmt
+}

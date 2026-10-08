@@ -1,0 +1,15 @@
+# One-time setup. This file and scripts/init remove themselves after `task init`.
+version: '3'
+
+tasks:
+  init:
+    desc: "One-time project setup: task init NAME=<name>"
+    interactive: true
+    requires:
+      vars: [NAME]
+    env:
+      NAME: '{{.NAME}}'
+      MODULE: '{{.MODULE | default ""}}'
+      ORG: '{{.ORG | default ""}}'
+    cmds:
+      - bash scripts/init

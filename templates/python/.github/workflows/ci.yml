@@ -1,0 +1,15 @@
+# No logic here on purpose. Everything CI does is `task ci`, so local and CI results match.
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: cachix/install-nix-action@v31
+      - run: nix develop -c task ci

@@ -1,0 +1,5 @@
+# Read by rg and fd. Keeps searches free of generated content.
+*.lock
+go.sum
+CHANGELOG.md
+vendor/

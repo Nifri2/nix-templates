@@ -1,0 +1,10 @@
+# TypeScript specific init steps. Sourced by scripts/init.
+# bun.lock contains the package name, so it is renamed together with everything else.
+
+REQUIRED_TOOLS=(bun biome)
+
+post_rename() {
+  bun install
+  # The new name changes line lengths, so format once.
+  task fmt
+}

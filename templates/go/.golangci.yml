@@ -1,0 +1,21 @@
+# golangci-lint v2. `task lint` runs linters and the format check, `task fmt` formats.
+version: "2"
+
+linters:
+  default: standard
+  enable:
+    - errorlint
+    - gocritic
+    - misspell
+    - revive
+    - unconvert
+    - unparam
+
+formatters:
+  enable:
+    - gofumpt
+    - goimports
+  settings:
+    goimports:
+      local-prefixes:
+        - projectname

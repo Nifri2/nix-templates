@@ -1,0 +1,13 @@
+{
+  "name": "projectname",
+  "version": "0.1.0",
+  "description": "TODO: one line description",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "projectname": "src/main.ts"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.4.2"
+  }
+}

@@ -1,0 +1,9 @@
+# version prints the human form by default
+exec projectname version
+stdout '^projectname test$'
+! stderr .
+
+# version --json prints exactly one JSON document
+exec projectname version --json
+stdout '^\{"name":"projectname","version":"test"\}$'
+! stderr .

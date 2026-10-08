@@ -1,0 +1,19 @@
+# Flutter specific init steps. Sourced by scripts/init.
+# Optional: ORG=<reverse domain>, e.g. dev.example. Defaults to com.example.
+# Dart package names allow lowercase letters, digits and underscores only.
+
+NAME_PATTERN='^[a-z][a-z0-9_]*$'
+REQUIRED_TOOLS=(flutter dart)
+
+validate() {
+  local org=${ORG:-com.example}
+  [[ $org =~ ^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)+$ ]] || die "invalid ORG '$org', expected e.g. dev.example"
+}
+
+post_rename() {
+  local org=${ORG:-com.example}
+  # Generates the Android project and lib/main.dart. Existing files are kept.
+  flutter create --project-name "$name" --org "$org" --platforms android .
+  flutter pub add 'dev:integration_test:{"sdk":"flutter"}'
+  dart format .
+}

@@ -1,0 +1,81 @@
+# The only command interface of this repo. List tasks with `task --list`.
+# Tasks print nothing on success and the full output on failure.
+# To see everything: task --output interleaved <name>
+version: '3'
+
+silent: true
+output:
+  group:
+    error_only: true
+
+includes:
+  init:
+    taskfile: Taskfile.init.yml
+    optional: true
+    flatten: true
+
+tasks:
+  setup:
+    desc: Install git hooks and download dependencies
+    cmds:
+      - lefthook install
+      - go mod download
+
+  dev:
+    desc: Run the program, e.g. `task dev -- version --json`
+    interactive: true
+    cmds:
+      - go run . {{.CLI_ARGS}}
+
+  fmt:
+    desc: Format the code
+    cmds:
+      - golangci-lint fmt
+
+  lint:
+    desc: Lint, vet and check formatting
+    cmds:
+      - golangci-lint run
+
+  test:
+    desc: Unit tests and e2e smoke tests (fast, runs on every commit)
+    cmds:
+      - go test -short ./...
+
+  e2e:
+    desc: Full e2e suite
+    cmds:
+      - go test -count=1 ./e2e/...
+
+  check:
+    desc: lint + test. Must pass before every commit
+    cmds:
+      - task: lint
+      - task: test
+
+  build:
+    desc: Build the program with nix (result/bin)
+    cmds:
+      - nix build
+
+  ci:
+    desc: Everything CI runs (check + e2e + build)
+    cmds:
+      - task: check
+      - task: e2e
+      - task: build
+
+  changelog:
+    desc: Regenerate CHANGELOG.md from the commit history
+    cmds:
+      - git-cliff --output CHANGELOG.md
+
+  hash:
+    desc: Update vendorHash in flake.nix. Run after every go.mod or go.sum change
+    cmds:
+      - |
+        tmp=$(mktemp -d)
+        trap 'rm -rf "$tmp"' EXIT
+        go mod vendor -o "$tmp/vendor"
+        hash=$(nix hash path "$tmp/vendor")
+        sed -i "s|vendorHash = \"[^\"]*\";|vendorHash = \"$hash\";|" flake.nix

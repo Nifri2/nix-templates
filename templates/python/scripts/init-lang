@@ -1,0 +1,30 @@
+# Python specific init steps. Sourced by scripts/init.
+# The import package gets the project name with '-' replaced by '_'.
+
+REQUIRED_TOOLS=(uv python3 ruff)
+
+validate() {
+  local pkg=${name//-/_}
+  python3 - "$pkg" <<'PY' || die "'$pkg' is a Python keyword or a standard library module, choose another name"
+import keyword, sys
+pkg = sys.argv[1]
+sys.exit(keyword.iskeyword(pkg) or keyword.issoftkeyword(pkg) or pkg in sys.stdlib_module_names)
+PY
+}
+
+pre_rename() {
+  local pkg=${name//-/_}
+  if [ -d "src/${placeholder}_pkg" ]; then
+    mv "src/${placeholder}_pkg" "src/$pkg"
+  fi
+  {
+    grep -rIlZ "${placeholder}_pkg" . --exclude-dir=.git --exclude-dir=.venv \
+      --exclude=init --exclude=init-lang || [ $? -eq 1 ]
+  } | xargs -0 -r sed -i "s/${placeholder}_pkg/$pkg/g"
+}
+
+post_rename() {
+  uv sync
+  # The new name changes line lengths and import order, so format once.
+  task fmt
+}

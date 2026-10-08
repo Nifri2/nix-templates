@@ -1,71 +1,57 @@
-
-# This flake works buy simply using go get <package> to fetch dependencies.
-# It uses vendor/ for dependencies, so you can run `go mod vendor` to populate it.
-# Or run `task mod` to automatically fetch dependencies and populate the vendor directory.
-
-# To build the Go project, run:
-#   task build
-
-# To run the Go project, run:
-#   nix run
-
 {
-  description = "Basic Go Project with Nix Flake";
+  description = "projectname";
 
-  inputs.nixpkgs.url = "github:NixOS/nixpkgs?ref=nixos-unstable";
+  inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 
-  outputs = { self, nixpkgs }:
+  outputs =
+    { self, nixpkgs }:
     let
-      system = "x86_64-linux";
-      pkgs = nixpkgs.legacyPackages.${system};
+      version = "0.1.0";
+      systems = [
+        "x86_64-linux"
+        "aarch64-linux"
+      ];
+      forAllSystems = f: nixpkgs.lib.genAttrs systems (system: f nixpkgs.legacyPackages.${system});
     in
     {
-      # Merge all packages under one attribute set to expose gopls
-      packages.${system} = {
+      # `nix build` produces the program and runs all tests, including the full e2e suite.
+      packages = forAllSystems (pkgs: {
         default = pkgs.buildGoModule {
-          pname = "put-name-here";  # Set the name of your package
-          version = "0.0.1";
+          pname = "projectname";
+          inherit version;
+          src = ./.;
 
-          src = pkgs.lib.cleanSource ./.;
+          # Updated by `task hash`. Run it after every go.mod or go.sum change.
+          vendorHash = "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
 
-          env.CGO_ENABLED = 1;  # Disable CGO for Static Compilation
-
+          env.CGO_ENABLED = 0;
           ldflags = [
-            "-s" "-w" "-extldflags '-static'"
-          ];  # Strip Binary and Disable Debug Information, static linking
+            "-s"
+            "-w"
+            "-X main.version=${version}"
+          ];
 
-          vendorHash = null;  # Null if you don't have a vendor directory
+          meta.mainProgram = "projectname";
+        };
+      });
 
-          buildInputs = [
-            pkgs.musl
-            pkgs.go
-            pkgs.gopls
-            pkgs.gotools
-            pkgs.go-tools
-            pkgs.golangci-lint
+      # Every tool the project needs. Nothing is installed globally.
+      devShells = forAllSystems (pkgs: {
+        default = pkgs.mkShell {
+          packages = with pkgs; [
+            go
+            gopls
+            golangci-lint
+
+            go-task
+            git-cliff
+            lefthook
+
+            ripgrep
+            fd
+            jq
           ];
         };
-
-        # Expose gopls directly for scripts to use
-        gopls = pkgs.gopls;
-      };
-
-      devShells.${system}.default = pkgs.mkShell {
-        nativeBuildInputs = [
-          pkgs.go
-          pkgs.go-task
-          pkgs.gopls
-          pkgs.golangci-lint
-          pkgs.gotools
-          pkgs.go-tools
-          pkgs.musl
-        ];
-
-        shellHook = ''
-          if [ "$SHELL" = "$(which fish)" ]; then
-            source .dev-fish-setup.fish
-          fi
-        ''; # Optional: Fish shell setup script
-      };
+      });
     };
 }

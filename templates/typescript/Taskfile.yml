@@ -1,0 +1,73 @@
+# The only command interface of this repo. List tasks with `task --list`.
+# Tasks print nothing on success and the full output on failure.
+# To see everything: task --output interleaved <name>
+version: '3'
+
+silent: true
+output:
+  group:
+    error_only: true
+
+includes:
+  init:
+    taskfile: Taskfile.init.yml
+    optional: true
+    flatten: true
+
+tasks:
+  setup:
+    desc: Install git hooks and dependencies
+    cmds:
+      - lefthook install
+      - bun install --frozen-lockfile
+
+  dev:
+    desc: Run the program, e.g. `task dev -- version --json`
+    interactive: true
+    cmds:
+      - bun run src/main.ts {{.CLI_ARGS}}
+
+  fmt:
+    desc: Format the code and apply safe lint fixes
+    cmds:
+      - biome check --write .
+
+  lint:
+    desc: Check formatting, lint and types
+    cmds:
+      - biome check .
+      - bun install --frozen-lockfile
+      - tsc --noEmit
+
+  test:
+    desc: Unit tests and e2e smoke tests (fast, runs on every commit)
+    cmds:
+      - bun test ./src ./e2e/smoke
+
+  e2e:
+    desc: Full e2e suite (e2e/smoke and e2e/full)
+    cmds:
+      - bun test
+
+  check:
+    desc: lint + types + test. Must pass before every commit
+    cmds:
+      - task: lint
+      - task: test
+
+  build:
+    desc: Compile a single binary into dist/
+    cmds:
+      - bun build src/main.ts --compile --outfile dist/projectname
+
+  ci:
+    desc: Everything CI runs (check + e2e + build)
+    cmds:
+      - task: check
+      - task: e2e
+      - task: build
+
+  changelog:
+    desc: Regenerate CHANGELOG.md from the commit history
+    cmds:
+      - git-cliff --output CHANGELOG.md

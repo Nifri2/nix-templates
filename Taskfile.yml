@@ -1,0 +1,26 @@
+# Maintenance tasks for this template repo.
+version: '3'
+
+silent: true
+
+vars:
+  TEMPLATES: go rust python typescript flutter
+
+tasks:
+  sync:
+    desc: Copy common/ into every standard template. Run after any change in common/. Does not delete files
+    cmds:
+      - for: { var: TEMPLATES }
+        cmd: cp -a common/. templates/{{.ITEM}}/
+
+  check:
+    desc: Fail if a file from common/ is missing or different in a template
+    cmds:
+      - for: { var: TEMPLATES }
+        cmd: |
+          (cd common && find . -type f | sort) | while read -r f; do
+            cmp -s "common/$f" "templates/{{.ITEM}}/$f" || {
+              echo "out of sync: templates/{{.ITEM}}/$f (run: task sync)" >&2
+              exit 1
+            }
+          done

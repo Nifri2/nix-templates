@@ -1,0 +1,19 @@
+# Git hooks. Installed once per clone by `task setup` (or `task init`).
+# Silent on success, shows the command output on failure.
+colors: false
+output:
+  - failure
+  - execution_out
+
+# Without this a hook that cannot find lefthook lets the commit through.
+assert_lefthook_installed: true
+
+commit-msg:
+  commands:
+    format:
+      run: bash scripts/check-commit-msg "{1}"
+
+pre-commit:
+  commands:
+    check:
+      run: task check

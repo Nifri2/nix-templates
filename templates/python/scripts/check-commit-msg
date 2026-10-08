@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+# Validates a commit message against the format in CLAUDE.md (section Commits).
+# Called by lefthook on commit-msg: bash scripts/check-commit-msg <message-file>
+set -euo pipefail
+
+# Count characters, not bytes, when checking the subject length.
+export LC_ALL=C.UTF-8
+
+file=${1:?usage: check-commit-msg <message-file>}
+
+# Drop CRs, the verbose-commit diff below the scissors line, comment lines and leading blank lines.
+msg=$(tr -d '\r' <"$file" | sed -e '/^# -* >8 -*$/,$d' -e '/^#/d' | sed -e '/[^[:space:]]/,$!d')
+subject=${msg%%$'\n'*}
+
+# Messages that git writes itself are exempt.
+case "$subject" in
+  "Merge branch "* | "Merge tag "* | "Merge remote-tracking branch "* | "Merge pull request "* | "Merge commit "*) exit 0 ;;
+  'Revert "'* | "fixup! "* | "squash! "* | "amend! "*) exit 0 ;;
+esac
+
+types='feat|fix|refactor|perf|docs|test|build|ci|chore'
+errors=()
+
+if [ -z "$subject" ]; then
+  errors+=("message is empty")
+elif ! grep -Eq "^($types)(\([A-Za-z0-9._/-]+\))?!?: [^[:space:]]" <<<"$subject"; then
+  errors+=("subject must be '<type>(<scope>): <summary>', type one of: ${types//|/, }; scope: letters, digits, . _ / -")
+fi
+if [ "${#subject}" -gt 72 ]; then
+  errors+=("subject has ${#subject} chars, max is 72")
+fi
+if [ "$(sed -n '2p' <<<"$msg")" != "" ]; then
+  errors+=("line 2 must be empty (blank line between subject and body)")
+fi
+for key in Why What Impact; do
+  if ! grep -Eq "^$key: [^[:space:]]" <<<"$msg"; then
+    errors+=("body needs a line '$key: <text>'")
+  fi
+done
+
+if [ "${#errors[@]}" -gt 0 ]; then
+  {
+    echo "commit message rejected:"
+    for e in "${errors[@]}"; do echo "  - $e"; done
+    echo "format: CLAUDE.md, section Commits"
+  } >&2
+  exit 1
+fi

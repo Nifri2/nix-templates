@@ -1,0 +1,88 @@
+# The only command interface of this repo. List tasks with `task --list`.
+# Tasks print nothing on success and the full output on failure.
+# To see everything: task --output interleaved <name>
+version: '3'
+
+silent: true
+output:
+  group:
+    error_only: true
+
+includes:
+  init:
+    taskfile: Taskfile.init.yml
+    optional: true
+    flatten: true
+
+vars:
+  AVD: e2e
+  SYSTEM_IMAGE: system-images;android-36;google_apis;x86_64
+
+tasks:
+  setup:
+    desc: Install git hooks and fetch packages
+    cmds:
+      - lefthook install
+      - flutter pub get
+
+  dev:
+    desc: Run the app on the connected device or emulator
+    interactive: true
+    cmds:
+      - flutter run {{.CLI_ARGS}}
+
+  fmt:
+    desc: Format the code
+    cmds:
+      - dart format .
+
+  lint:
+    desc: Check formatting and run the analyzer (also type checks)
+    cmds:
+      - dart format --output=none --set-exit-if-changed .
+      - flutter analyze
+
+  test:
+    desc: Unit and widget tests (fast, no device needed, runs on every commit)
+    cmds:
+      - flutter test
+
+  emulator:
+    desc: Create (once) and start a headless emulator for `task e2e`. Blocks, run it in the background
+    interactive: true
+    cmds:
+      - |
+        if ! avdmanager list avd -c | grep -qx '{{.AVD}}'; then
+          echo no | avdmanager create avd --name '{{.AVD}}' --package '{{.SYSTEM_IMAGE}}' --device pixel_6
+        fi
+      - emulator -avd '{{.AVD}}' -no-window -no-audio -no-snapshot -no-boot-anim
+
+  e2e:
+    desc: Full e2e suite on a device (integration_test). Needs a running emulator, see `task emulator`
+    preconditions:
+      - sh: test "$(flutter devices --machine | jq '[.[] | select(.targetPlatform | startswith("android"))] | length')" -gt 0
+        msg: no Android device connected. Start one with `task emulator` and wait until it has booted.
+    cmds:
+      - flutter test integration_test
+
+  check:
+    desc: lint + test. Must pass before every commit
+    cmds:
+      - task: lint
+      - task: test
+
+  build:
+    desc: Build the release APK
+    cmds:
+      - flutter build apk
+
+  ci:
+    desc: Everything CI runs (check + build). e2e needs an emulator, run `task e2e` before every merge
+    cmds:
+      - task: check
+      - task: build
+
+  changelog:
+    desc: Regenerate CHANGELOG.md from the commit history
+    cmds:
+      - git-cliff --output CHANGELOG.md

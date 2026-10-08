@@ -1,29 +1,43 @@
 {
-  description = "Python Template with Nix Flake";
+  description = "projectname";
 
-  inputs.nixpkgs.url = "github:NixOS/nixpkgs?ref=nixos-unstable";
-  inputs.flake-utils.url = "github:numtide/flake-utils";
+  inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 
-  outputs = { self, nixpkgs, flake-utils }:
-    flake-utils.lib.eachDefaultSystem (system:
-      let
-        pkgs = nixpkgs.legacyPackages.${system};
-        pythonEnv = pkgs.python3.withPackages (ps: with ps; [
-          pyyaml
-        ]);
-      in {
-        devShells.default = pkgs.mkShell {
-          nativeBuildInputs = [
-            pkgs.python3
+  outputs =
+    { self, nixpkgs }:
+    let
+      systems = [
+        "x86_64-linux"
+        "aarch64-linux"
+      ];
+      forAllSystems = f: nixpkgs.lib.genAttrs systems (system: f nixpkgs.legacyPackages.${system});
+    in
+    {
+      # Prototype stack: dev shell only, no nix package.
+      # Every tool the project needs. Nothing is installed globally.
+      devShells = forAllSystems (pkgs: {
+        default = pkgs.mkShell {
+          packages = with pkgs; [
+            python3
+            uv
+            ruff
+            pyright
+
+            go-task
+            git-cliff
+            lefthook
+
+            ripgrep
+            fd
+            jq
           ];
 
-          shellHook = ''
-            fish --init-command 'source .dev-fish-setup.fish'
-            exit 0
-          ''; # Optional: Fish shell setup script, just delete if not needed
-
-          buildInputs = [ pythonEnv ];
+          env = {
+            # uv must use the interpreter from nixpkgs. Downloaded interpreters do not run on NixOS.
+            UV_PYTHON_DOWNLOADS = "never";
+            UV_PYTHON = pkgs.python3.interpreter;
+          };
         };
-      }
-    );
+      });
+    };
 }

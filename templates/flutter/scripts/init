@@ -1,0 +1,69 @@
+#!/usr/bin/env bash
+# One-time project setup after `nix flake init`. Called by `task init NAME=<name>`.
+# Renames the placeholder, runs the language specific steps, installs the git hooks
+# and then removes itself. Safe to run again if a step failed.
+set -Eeuo pipefail
+
+placeholder=projectname
+name=${NAME:-}
+NAME_PATTERN='^[a-z]([a-z0-9-]*[a-z0-9])?$'
+REQUIRED_TOOLS=()
+
+# Language specific part. May set NAME_PATTERN and REQUIRED_TOOLS and define
+# validate, pre_rename and post_rename.
+if [ -f scripts/init-lang ]; then
+  # shellcheck source=/dev/null
+  source scripts/init-lang
+fi
+
+die() {
+  echo "init: $*" >&2
+  exit 2
+}
+
+# --- checks, before anything is changed ---------------------------------------
+
+[ -n "$name" ] || die "usage: task init NAME=<name>"
+[[ $name =~ $NAME_PATTERN ]] || die "invalid name '$name', must match $NAME_PATTERN"
+[[ $name != *"$placeholder"* ]] || die "the name must not contain '$placeholder'"
+
+for tool in git grep sed xargs lefthook task "${REQUIRED_TOOLS[@]}"; do
+  command -v "$tool" >/dev/null || die "'$tool' not found. Run inside the dev shell: nix develop -c task init NAME=$name"
+done
+
+if top=$(git rev-parse --show-toplevel 2>/dev/null); then
+  [ "$top" = "$(pwd -P)" ] ||
+    die "this directory is inside another git repository ($top). Move the project out of it or run 'git init' here first."
+else
+  git init -q -b main
+fi
+
+if declare -F validate >/dev/null; then validate; fi
+
+# --- changes ---------------------------------------------------------------------
+
+trap 'echo "init: a step failed. Fix the cause and run the same command again." >&2' ERR
+
+if declare -F pre_rename >/dev/null; then pre_rename; fi
+
+# Replace the placeholder everywhere except in the init files themselves.
+# grep exits 1 when nothing is left to rename, which is fine on a second run.
+{
+  grep -rIlZ "$placeholder" . \
+    --exclude-dir=.git --exclude-dir=.direnv --exclude-dir=node_modules \
+    --exclude-dir=.venv --exclude-dir=target \
+    --exclude=init --exclude=init-lang --exclude=Taskfile.init.yml || [ $? -eq 1 ]
+} | xargs -0 -r sed -i "s/$placeholder/$name/g"
+
+if declare -F post_rename >/dev/null; then post_rename; fi
+
+lefthook install >/dev/null
+
+rm -f scripts/init scripts/init-lang Taskfile.init.yml
+git add -A -- .
+
+trap - ERR
+echo "initialized '$name'. Next:"
+echo "  1. direnv allow"
+echo "  2. fill in docs/project.md (Purpose) and docs/architecture.md"
+echo "  3. task check, then make the first commit"
