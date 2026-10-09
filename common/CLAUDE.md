@@ -139,7 +139,7 @@ Agent: <agent> (<model>)
 
 ## Multi-agent work
 Preferred for tasks that split into independent parts. Not for sequential or same-file work.
-The lead is the main session. It plans, delegates, reviews and merges. It does not implement.
+The lead is the main session. It plans, delegates, reviews and integrates. It does not implement.
 
 Before starting, the lead (or the architect agent) writes tasks/<id>.md containing:
 1. Split into subtasks, each with owned paths. No path has two owners.
@@ -157,27 +157,33 @@ Agents and their models are fixed in .claude/agents/<name>.md, not chosen ad hoc
 | reviewer | opus | read-only review before merge |
 | scout | haiku | search, summaries, simple checks. Read-only |
 
-Isolation:
+Rules in both modes:
+- Order per subtask: test-writer -> lead integrates the tests (`task check` passes, the new tests still fail
+  in `task e2e`) -> worker -> reviewer -> lead integrates. The test-writer of a subtask never implements it.
+- An agent edits only its owned paths. Change needed elsewhere: request it in the handoff, do not edit.
+- Files are the record: tasks/<id>.md in, handoffs/<id>-<subtask>.md out. Messages are not versioned.
+- After integration: fold handoff facts into docs/, delete the task and handoff files (keep TEMPLATE.md).
+
+Subagents (default). Each agent reports only to the lead.
 - test-writer and worker run in their own git worktree and branch (.claude/worktrees/). No forks.
 - Worktrees start from the lead's HEAD and contain committed files only. Commit tasks/<id>.md before delegating.
 - A worktree may have no dev shell loaded. If `task` is not on PATH, prefix commands with `nix develop -c`.
-- An agent edits only its owned paths. Change needed elsewhere: request it in the handoff, do not edit.
-
-Order per subtask: test-writer -> lead merges the test branch (`task check` passes, the new tests still fail
-in `task e2e`) -> worker -> reviewer -> merge.
-The agent that writes the e2e test for a subtask is never the one that implements it.
-
-Communication:
-- Default channel is files: tasks/<id>.md in, handoffs/<id>-<subtask>.md out, committed on the agent's branch.
+- Agents commit on their branch: code, docs and handoff together.
 - Interface change mid-task: stop and report to the lead. Never change a shared contract silently.
-- Subagents report only to the lead. Use agent teams or cross-session messaging only when
-  workers must negotiate during execution, and only if enabled in this install.
+- Only the lead or the user merges, after `task ci` passed and the reviewer approved, both run inside that
+  agent's worktree (the lead's checkout has a different HEAD). After merge: delete branch and worktree.
 
-Merge:
-- Only the lead or the user merges. An implementation branch is merged after `task ci` passed and the reviewer
-  approved. Both run inside that agent's worktree, never in the lead's checkout (it has a different HEAD).
-- After merge: delete branch and worktree, fold handoff facts into docs/, delete the task and handoff files
-  (keep TEMPLATE.md).
+Agent team (experimental, only if enabled in this install). Use it only when workers must negotiate during
+the work: cross-layer changes, debugging with competing hypotheses. Teammates are spawned from the agent
+definitions above and message each other directly. They share the lead's checkout, so:
+- Owned paths are strict. No teammate touches a path it does not own, not even to format or fix a check.
+- Teammates do not commit. The pre-commit hook checks the whole tree and would fail on another teammate's
+  unfinished work. A teammate writes its handoff and reports done to the lead.
+- The lead commits once the tree passes `task check`, one commit per subtask where the changes separate.
+- Interface change: agreed by message between the affected teammates and the lead. The lead updates
+  tasks/<id>.md before anyone builds on it.
+- With teams enabled, a named agent call without `isolation` on the call becomes a teammate. For subagent
+  mode pass `isolation: worktree` on the call; the frontmatter alone does not keep the worktree.
 
 ## Done means
 - Acceptance checks from the task file pass, `task check` passes, new behavior is covered by an e2e test.

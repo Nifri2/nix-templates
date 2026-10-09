@@ -71,6 +71,31 @@ content lives in `docs/project.md` and is not touched.
 Agent models are set in `common/.claude/agents/*.md` (`opus`, `sonnet`, `haiku`). Change the
 `model:` line there if you want a different tier for a role.
 
+## Agent teams
+
+`CLAUDE.md` describes two multi-agent modes. The default uses subagents, each in its own git
+worktree, and works out of the box. The second mode uses Claude Code agent teams: teammates
+share the lead's checkout, message each other directly and do not commit. Agent teams are
+experimental and enabled per user, not per project, so `common/.claude/settings.json` does
+not set the variable. To enable them, add to `~/.claude/settings.json`:
+
+```json
+{
+  "env": {
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
+  }
+}
+```
+
+If home-manager writes that file, set the same key in its source instead, for example
+`programs.claude-code.settings.env.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS = "1";` with the
+claude-code module, and let home-manager regenerate the file. Once the variable is set, a
+named agent call without `isolation` on the call becomes a teammate, so the subagent flow is
+affected too; `CLAUDE.md` says how to keep it.
+
+Team mode is untested in this repo. No task was run with a team, and its rules in `CLAUDE.md`
+and in the worker and test-writer definitions come from the Claude Code docs only.
+
 ## Test status
 
 Tested from a fresh `nix flake init` for go, rust, python and typescript: `task init`
