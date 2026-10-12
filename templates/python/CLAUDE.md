@@ -71,6 +71,9 @@ Defaults for new projects. Do not choose ad hoc.
 - Existing repo: its stack wins over these defaults.
 - Deviation from the table: propose it with a reason, wait for user approval, record in docs/decisions/.
 - No second language inside a repo without approval.
+- Build so the app can be containerized: one image as a monolith by default. Split into separate services
+  only when a real need forces it (independent scaling, deploy or ownership). Config via env vars or flags,
+  state outside the process, no host paths.
 - Dependencies: prefer the standard library. Add one only if it removes real work.
 - Source files stay under about 400 lines. Split by responsibility, so reads stay cheap.
 
